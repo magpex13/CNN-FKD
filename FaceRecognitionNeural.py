@@ -4,7 +4,7 @@ import csv
 import gc
 import matplotlib.pyplot as plt
 
-sample = 10
+sample = 7049
 
 def load():
     with open('training.csv') as file:
@@ -74,21 +74,21 @@ images,keypoints = load()
 x = tf.placeholder(tf.float32)
 y = tf.placeholder(tf.float32)
 
-y_ = deepnn(images)
+y_ = deepnn(x)
 cross_entropy = tf.reduce_mean(
       tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=y_))
 train_step = tf.train.MomentumOptimizer(0.01,0.9).minimize(cross_entropy)
-correct_prediction = tf.equal(tf.argmax(y_, 1), tf.argmax(y, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+# correct_prediction = tf.equal(tf.argmax(y_, 1), tf.argmax(y, 1))
+# accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 epochs = 1000
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     for i in range(epochs):
         if i % 100 == 0:
-            train_accuracy = accuracy.eval(feed_dict={
+            train_accuracy = cross_entropy.eval(feed_dict={
                 x: images, y: keypoints})
-            print('step %d, training accuracy %f' % (i, train_accuracy))
+            print('step %d, training error %f' % (i, train_accuracy))
         train_step.run(feed_dict={x: images, y: keypoints})
 
     # print('test accuracy %g' % accuracy.eval(feed_dict={
