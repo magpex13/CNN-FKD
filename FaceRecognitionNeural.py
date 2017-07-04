@@ -3,6 +3,7 @@ import numpy as np
 import csv
 import gc
 import matplotlib.pyplot as plt
+from pandas.io.parsers import read_csv
 
 sample = 7049
 
@@ -24,6 +25,14 @@ def load():
     keypoints = np.array([ i / 93.8988 for i in keypoints]).astype(np.float32) # 93.8988 es el valor más grande de todos los keypoints
     return images,keypoints
 
+def loadPantas():
+    dataset = read_csv('training.csv')
+    dataset = dataset.dropna()
+    images = [np.fromstring(item, sep = ' ') for item in dataset['Image']]
+    keypoints = dataset[dataset.columns[:-1]].values.astype(np.float32)
+    images = np.array([ i / 255.0 for i in images]).astype(np.float32)
+    keypoints = np.array([ i / 93.8988 for i in keypoints]).astype(np.float32) # 93.8988 es el valor más grande de todos los keypoints
+    return images,keypoints
 def conv2d(x, W):
   return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
@@ -70,7 +79,7 @@ def deepnn(x):
 
     return hfc2
 
-images,keypoints = load()
+images,keypoints = loadPantas()
 x = tf.placeholder(tf.float32)
 y = tf.placeholder(tf.float32)
 
@@ -81,15 +90,17 @@ train_step = tf.train.MomentumOptimizer(0.01,0.9).minimize(cross_entropy)
 # correct_prediction = tf.equal(tf.argmax(y_, 1), tf.argmax(y, 1))
 # accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
+batch = 29
 epochs = 1000
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     for i in range(epochs):
+        idx = int( i % (sample / batch))
         if i % 100 == 0:
-            train_accuracy = cross_entropy.eval(feed_dict={
-                x: images, y: keypoints})
-            print('step %d, training error %f' % (i, train_accuracy))
-        train_step.run(feed_dict={x: images, y: keypoints})
+            train_error = cross_entropy.eval(feed_dict={
+                x: images[idx * batch: (idx + 1) * batch], y: keypoints[idx * batch: (idx + 1) * batch]})
+            print('step %d, training error %f' % (i, train_error))
+        train_step.run(feed_dict={x: images[idx * batch: (idx + 1) * batch], y: keypoints[idx * batch: (idx + 1) * batch]})
 
     # print('test accuracy %g' % accuracy.eval(feed_dict={
     #     x: mnist.test.images, y: mnist.test.labels}))
