@@ -28,11 +28,12 @@ def load():
 def loadPantas():
     dataset = read_csv('training.csv')
     dataset = dataset.dropna()
-    images = [np.fromstring(item, sep = ' ') for item in dataset['Image']]
-    keypoints = dataset[dataset.columns[:-1]].values.astype(np.float32)
-    images = np.array([ i / 255.0 for i in images]).astype(np.float32)
-    keypoints = np.array([ i / 93.8988 for i in keypoints]).astype(np.float32) # 93.8988 es el valor más grande de todos los keypoints
+    #images = [np.fromstring(item, sep = ' ') for item in dataset['Image']]
+    images = np.vstack(dataset['Image'].apply(lambda img : np.fromstring(img, sep = ' ')).values) / 255.0
+    images = images.astype(np.float32)
+    keypoints = dataset[dataset.columns[:-1]].apply(lambda keys : keys / 93.8988).values.astype(np.float32) # 93.8988 es el valor más grande de todos los keypoints
     return images,keypoints
+    
 def conv2d(x, W):
   return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
@@ -90,7 +91,7 @@ train_step = tf.train.MomentumOptimizer(0.01,0.9).minimize(cross_entropy)
 # correct_prediction = tf.equal(tf.argmax(y_, 1), tf.argmax(y, 1))
 # accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-batch = 29
+batch = 1007
 epochs = 1000
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
